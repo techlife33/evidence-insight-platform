@@ -277,81 +277,95 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                 </Select>
               </div>
 
-              <div className="border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Evidence</TableHead>
-                      <TableHead>Confidence</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEvidence.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
+              <div className="space-y-4">
+                {filteredEvidence.map((item) => (
+                  <Card key={item.id} className={`border transition-all duration-200 ${
+                    item.status === 'approved' ? 'border-success/30 bg-success/5' :
+                    item.status === 'rejected' ? 'border-destructive/30 bg-destructive/5' :
+                    'border-border hover:border-primary/30'
+                  }`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-4">
+                          {/* Header with Finding and Status */}
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-foreground leading-tight">{item.finding}</h4>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">{item.category}</Badge>
+                                <Badge variant="secondary">{item.subcategory}</Badge>
+                                <Badge variant={getConfidenceBadgeVariant(item.confidence)} className="ml-2">
+                                  {item.confidence}% confidence
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(item.status)}
+                                <span className="text-sm font-medium capitalize">{item.status}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Source Information */}
+                          <div className="flex items-center gap-2 text-sm">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{item.documentSource}</span>
+                            {item.pageNumber && (
+                              <Badge variant="outline" className="text-xs">
+                                Page {item.pageNumber}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Annotation Section */}
                           <div className="space-y-2">
-                            <div className="font-medium">{item.finding}</div>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline">{item.category}</Badge>
-                              <Badge variant="secondary">{item.subcategory}</Badge>
+                              <Eye className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium text-foreground">Document Reference</span>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              <strong>Annotation:</strong> {item.annotation}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              <strong>Explanation:</strong> {item.explanation}
+                            <div className="bg-muted/50 rounded-md p-3 border-l-4 border-primary/30">
+                              <p className="text-sm text-muted-foreground leading-relaxed">{item.annotation}</p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getConfidenceBadgeVariant(item.confidence)}>
-                            {item.confidence}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            <div>
-                              <div className="font-medium text-sm">{item.documentSource}</div>
-                              {item.pageNumber && (
-                                <div className="text-xs text-muted-foreground">
-                                  Page {item.pageNumber}
-                                </div>
-                              )}
+
+                          {/* Explanation Section */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-accent" />
+                              <span className="text-sm font-medium text-foreground">AI Analysis</span>
+                            </div>
+                            <div className="bg-accent/5 rounded-md p-3 border-l-4 border-accent/30">
+                              <p className="text-sm text-muted-foreground leading-relaxed">{item.explanation}</p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(item.status)}
-                            <span className="text-sm capitalize">{item.status}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant={item.status === 'approved' ? 'default' : 'outline'}
-                              onClick={() => handleStatusChange(item.id, 'approved')}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={item.status === 'rejected' ? 'destructive' : 'outline'}
-                              onClick={() => handleStatusChange(item.id, 'rejected')}
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2 ml-4">
+                          <Button
+                            size="sm"
+                            variant={item.status === 'approved' ? 'default' : 'outline'}
+                            onClick={() => handleStatusChange(item.id, 'approved')}
+                            className="min-w-20"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={item.status === 'rejected' ? 'destructive' : 'outline'}
+                            onClick={() => handleStatusChange(item.id, 'rejected')}
+                            className="min-w-20"
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
               {filteredEvidence.length === 0 && (
