@@ -13,6 +13,15 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { 
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { 
   Select, 
   SelectContent, 
   SelectItem, 
@@ -119,6 +128,8 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     // Simulate AI processing
@@ -150,7 +161,15 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
     }
 
     setFilteredEvidence(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [evidence, searchTerm, statusFilter, categoryFilter]);
+
+  // Pagination calculations
+  const totalItems = filteredEvidence.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEvidence = filteredEvidence.slice(startIndex, endIndex);
 
   const handleStatusChange = (evidenceId: string, newStatus: 'approved' | 'rejected') => {
     setEvidence(prev => 
@@ -278,7 +297,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
               </div>
 
               <div className="space-y-4">
-                {filteredEvidence.map((item) => (
+                {paginatedEvidence.map((item) => (
                   <Card key={item.id} className={`border transition-all duration-200 ${
                     item.status === 'approved' ? 'border-success/30 bg-success/5' :
                     item.status === 'rejected' ? 'border-destructive/30 bg-destructive/5' :
@@ -368,10 +387,51 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                 ))}
               </div>
 
-              {filteredEvidence.length === 0 && (
+              {filteredEvidence.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No evidence matches your current filters.
                 </div>
+              ) : (
+                <>
+                  {/* Pagination Controls */}
+                  <div className="flex items-center justify-between pt-6">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} results
+                    </div>
+                    
+                    {totalPages > 1 && (
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious 
+                              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          
+                          <PaginationItem>
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
