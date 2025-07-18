@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AuditData } from "@/pages/NewAudit";
+import { AnnotationTool } from "./AnnotationTool";
 
 interface EvidenceReviewStepProps {
   data: AuditData;
@@ -92,7 +93,19 @@ interface Document {
   url: string;
 }
 
-// Mock documents - now using real file paths
+interface PageAnnotation {
+  id: string;
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text: string;
+  category: string;
+  subcategory: string;
+  documentId: string;
+}
+
 const mockDocuments: Document[] = [
   {
     id: "doc-1",
@@ -106,7 +119,7 @@ const mockDocuments: Document[] = [
     name: "QM_Report_2024.docx",
     type: "docx",
     pages: 1,
-    url: "/placeholder.svg" // DOCX preview as image for demo
+    url: "/placeholder.svg"
   },
   {
     id: "doc-3",
@@ -117,7 +130,6 @@ const mockDocuments: Document[] = [
   }
 ];
 
-// Simulated AI findings
 const mockEvidenceFindings: Evidence[] = [
   {
     id: "ev-001",
@@ -184,6 +196,15 @@ const mockEvidenceFindings: Evidence[] = [
   }
 ];
 
+const categories = ["Credentialing", "Quality Management", "Utilization Management", "Provider Network", "Member Services"];
+const subcategories = {
+  "Credentialing": ["Provider Verification", "Background Checks", "License Validation", "Continuing Education"],
+  "Quality Management": ["Performance Metrics", "HEDIS Measures", "Clinical Outcomes", "Patient Safety"],
+  "Utilization Management": ["Prior Authorization", "Case Management", "Medical Necessity", "Appeals Process"],
+  "Provider Network": ["Network Adequacy", "Access Standards", "Provider Relations", "Contracting"],
+  "Member Services": ["Customer Service", "Grievances", "Member Communication", "Satisfaction Surveys"]
+};
+
 export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: EvidenceReviewStepProps) {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [filteredEvidence, setFilteredEvidence] = useState<Evidence[]>([]);
@@ -203,8 +224,10 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
   const [editingAnnotation, setEditingAnnotation] = useState<string>("");
   const [isEditingAnnotation, setIsEditingAnnotation] = useState(false);
 
+  // Page annotations state
+  const [pageAnnotations, setPageAnnotations] = useState<PageAnnotation[]>([]);
+
   useEffect(() => {
-    // Simulate AI processing
     setLoading(true);
     setTimeout(() => {
       setEvidence(mockEvidenceFindings);
@@ -281,6 +304,51 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
     }
   };
 
+  // Page annotation handlers
+  const handleAddPageAnnotation = (annotation: Omit<PageAnnotation, 'id' | 'pageNumber' | 'documentId'>) => {
+    if (!selectedDocument) return;
+    
+    const newAnnotation: PageAnnotation = {
+      ...annotation,
+      id: `ann-${Date.now()}`,
+      pageNumber: viewerCurrentPage,
+      documentId: selectedDocument.id
+    };
+    
+    setPageAnnotations(prev => [...prev, newAnnotation]);
+    toast({
+      title: "Annotation Added",
+      description: "New annotation has been created successfully.",
+    });
+  };
+
+  const handleUpdatePageAnnotation = (id: string, updates: Partial<PageAnnotation>) => {
+    setPageAnnotations(prev => 
+      prev.map(ann => 
+        ann.id === id ? { ...ann, ...updates } : ann
+      )
+    );
+    toast({
+      title: "Annotation Updated",
+      description: "Annotation has been updated successfully.",
+    });
+  };
+
+  const handleDeletePageAnnotation = (id: string) => {
+    setPageAnnotations(prev => prev.filter(ann => ann.id !== id));
+    toast({
+      title: "Annotation Deleted",
+      description: "Annotation has been removed successfully.",
+    });
+  };
+
+  const getCurrentPageAnnotations = () => {
+    if (!selectedDocument) return [];
+    return pageAnnotations.filter(
+      ann => ann.documentId === selectedDocument.id && ann.pageNumber === viewerCurrentPage
+    );
+  };
+
   const getConfidenceBadgeVariant = (confidence: number) => {
     if (confidence >= 90) return "default";
     if (confidence >= 75) return "secondary";
@@ -295,7 +363,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
     }
   };
 
-  const categories = [...new Set(evidence.map(item => item.category))];
+  const categoriesData = [...new Set(evidence.map(item => item.category))];
   const approvedCount = evidence.filter(item => item.status === 'approved').length;
   const rejectedCount = evidence.filter(item => item.status === 'rejected').length;
   const pendingCount = evidence.filter(item => item.status === 'pending').length;
@@ -390,7 +458,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map(category => (
+                    {categoriesData.map(category => (
                       <SelectItem key={category} value={category}>
                         {category}
                       </SelectItem>
@@ -409,7 +477,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-4">
-                          {/* Header with Finding and Status */}
                           <div className="flex items-start justify-between">
                             <div className="space-y-2">
                               <h4 className="font-semibold text-foreground leading-tight">{item.finding}</h4>
@@ -429,7 +496,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                             </div>
                           </div>
 
-                          {/* Source Information */}
                           <div className="flex items-center gap-2 text-sm">
                             <FileText className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{item.documentSource}</span>
@@ -440,7 +506,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                             )}
                           </div>
 
-                          {/* Annotation Section */}
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Eye className="h-4 w-4 text-primary" />
@@ -451,7 +516,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                             </div>
                           </div>
 
-                          {/* Explanation Section */}
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <FileText className="h-4 w-4 text-accent" />
@@ -463,7 +527,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="flex flex-col gap-2 ml-4">
                           <Button
                             size="sm"
@@ -505,7 +568,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                 </div>
               ) : (
                 <>
-                  {/* Pagination Controls */}
                   <div className="flex items-center justify-between pt-6">
                     <div className="text-sm text-muted-foreground">
                       Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} results
@@ -550,7 +612,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
 
           {/* Document Viewer Dialog */}
           <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-            <DialogContent className="w-[95vw] max-w-none h-[95vh] p-0">
+            <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] p-0">
               <DialogHeader className="p-6 pb-0 border-b">
                 <DialogTitle className="text-lg">Evidence Viewer - {selectedEvidence?.finding}</DialogTitle>
               </DialogHeader>
@@ -596,32 +658,93 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                     </div>
                   </div>
 
-                  {/* Document Display */}
+                  {/* Document Display with Annotations */}
                   <div className="flex-1 border border-border rounded-lg overflow-auto bg-muted/20 relative">
                     {selectedDocument ? (
                       <div className="relative w-full h-full">
                         {selectedDocument.type === 'pdf' ? (
-                          <div className="w-full h-full flex items-center justify-center bg-white">
-                            <object
-                              data={selectedDocument.url}
-                              type="application/pdf"
-                              className="w-full h-full min-h-[600px]"
-                              style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center top' }}
-                            >
-                              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                                <FileText className="h-16 w-16 mb-4 text-muted-foreground" />
-                                <p className="text-lg font-medium mb-2">PDF Preview</p>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                  {selectedDocument.name} - Page {selectedEvidence?.pageNumber || 1}
-                                </p>
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
-                                  <p className="text-sm text-blue-700">
-                                    This is a simulated PDF viewer. In production, this would display the actual PDF content
-                                    with the highlighted evidence region.
-                                  </p>
-                                </div>
+                          <div className="w-full h-full flex items-center justify-center bg-white relative">
+                            <div className="bg-white border shadow-lg p-8 max-w-4xl w-full min-h-[800px] relative">
+                              <div className="mb-6">
+                                <h3 className="text-lg font-semibold mb-2">
+                                  {selectedDocument.name} - Page {selectedEvidence?.pageNumber || viewerCurrentPage}
+                                </h3>
+                                <div className="border-b border-gray-200 mb-4"></div>
                               </div>
-                            </object>
+                              
+                              <div className="space-y-4 text-sm leading-relaxed">
+                                <p>
+                                  <strong>Document Section:</strong> Provider Credentialing Records
+                                </p>
+                                <p>
+                                  This section contains medical license verification documentation 
+                                  including state board certifications, expiration dates, and 
+                                  verification stamps.
+                                </p>
+                                
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                                  <h4 className="font-semibold text-blue-800 mb-2">License Verification Certificate</h4>
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <strong>License Number:</strong> MD-12345
+                                    </div>
+                                    <div>
+                                      <strong>Issue Date:</strong> 01/15/2020
+                                    </div>
+                                    <div>
+                                      <strong>Expiration Date:</strong> 12/31/2025
+                                    </div>
+                                    <div>
+                                      <strong>Status:</strong> Active
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 text-xs text-blue-700">
+                                    Verified by State Medical Board - Stamp: SMB-2024-VERIFIED
+                                  </div>
+                                </div>
+
+                                <p className="mt-6">
+                                  Additional verification includes background check completion, 
+                                  continuing education requirements, and malpractice insurance 
+                                  documentation as required by NCQA standards.
+                                </p>
+                              </div>
+
+                              {/* Original Evidence Annotation */}
+                              {selectedEvidence?.coordinates && (
+                                <div
+                                  className="absolute border-2 border-blue-500 bg-blue-500/20 rounded-sm"
+                                  style={{
+                                    left: `${((selectedEvidence.coordinates.x || 0) * zoom) / 100}px`,
+                                    top: `${((selectedEvidence.coordinates.y || 0) * zoom) / 100}px`,
+                                    width: `${((selectedEvidence.coordinates.width || 0) * zoom) / 100}px`,
+                                    height: `${((selectedEvidence.coordinates.height || 0) * zoom) / 100}px`,
+                                  }}
+                                >
+                                  <div className="absolute -top-6 left-0 bg-blue-500 text-white rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-sm">
+                                    AI Evidence: {selectedEvidence.id}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Page Annotations Overlay */}
+                              {getCurrentPageAnnotations().map((annotation) => (
+                                <div
+                                  key={annotation.id}
+                                  className="absolute border-2 border-primary bg-primary/20 rounded-sm group hover:bg-primary/30 transition-colors"
+                                  style={{
+                                    left: `${(annotation.x * zoom) / 100}px`,
+                                    top: `${(annotation.y * zoom) / 100}px`,
+                                    width: `${(annotation.width * zoom) / 100}px`,
+                                    height: `${(annotation.height * zoom) / 100}px`,
+                                  }}
+                                >
+                                  <div className="absolute -top-6 left-0 bg-primary text-primary-foreground rounded px-1 py-0.5 text-xs font-medium whitespace-nowrap shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {annotation.category}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <img 
@@ -630,23 +753,6 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                             className="w-full h-auto max-w-none"
                             style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center top' }}
                           />
-                        )}
-                        
-                        {/* Evidence Annotation Overlay */}
-                        {selectedEvidence?.coordinates && (
-                          <div
-                            className="absolute border-2 border-primary bg-primary/20 rounded-sm"
-                            style={{
-                              left: `${((selectedEvidence.coordinates.x || 0) * zoom) / 100}px`,
-                              top: `${((selectedEvidence.coordinates.y || 0) * zoom) / 100}px`,
-                              width: `${((selectedEvidence.coordinates.width || 0) * zoom) / 100}px`,
-                              height: `${((selectedEvidence.coordinates.height || 0) * zoom) / 100}px`,
-                            }}
-                          >
-                            <div className="absolute -top-8 left-0 bg-primary text-primary-foreground rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-sm">
-                              Evidence: {selectedEvidence.id}
-                            </div>
-                          </div>
                         )}
                       </div>
                     ) : (
@@ -661,7 +767,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                 </div>
 
                 {/* Evidence Details Panel */}
-                <div className="w-80 space-y-4">
+                <div className="w-96 space-y-4 overflow-y-auto">
                   {selectedEvidence && (
                     <>
                       <Card>
@@ -693,7 +799,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                       <Card>
                         <CardHeader>
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Annotation</CardTitle>
+                            <CardTitle className="text-base">Original Annotation</CardTitle>
                             <Button
                               size="sm"
                               variant="outline"
@@ -719,7 +825,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                               </Button>
                             </div>
                           ) : (
-                            <div className="text-sm bg-muted/50 p-3 rounded border-l-4 border-primary/30">
+                            <div className="text-sm bg-muted/50 p-3 rounded border-l-4 border-blue-500/30">
                               {selectedEvidence.annotation}
                             </div>
                           )}
@@ -736,6 +842,17 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                           </div>
                         </CardContent>
                       </Card>
+
+                      {/* Annotation Tool */}
+                      <AnnotationTool
+                        annotations={getCurrentPageAnnotations()}
+                        onAddAnnotation={handleAddPageAnnotation}
+                        onUpdateAnnotation={handleUpdatePageAnnotation}
+                        onDeleteAnnotation={handleDeletePageAnnotation}
+                        categories={categories}
+                        subcategories={subcategories}
+                        zoom={zoom}
+                      />
 
                       <div className="space-y-2">
                         <Button
