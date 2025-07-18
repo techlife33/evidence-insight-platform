@@ -550,15 +550,15 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
 
           {/* Document Viewer Dialog */}
           <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-            <DialogContent className="max-w-7xl h-[90vh] p-0">
-              <DialogHeader className="p-6 pb-0">
-                <DialogTitle>Evidence Viewer - {selectedEvidence?.finding}</DialogTitle>
+            <DialogContent className="w-[95vw] max-w-none h-[95vh] p-0">
+              <DialogHeader className="p-6 pb-0 border-b">
+                <DialogTitle className="text-lg">Evidence Viewer - {selectedEvidence?.finding}</DialogTitle>
               </DialogHeader>
               
-              <div className="flex h-full p-6 pt-0 gap-6">
+              <div className="flex h-full p-6 pt-0 gap-6 overflow-hidden">
                 {/* Document Viewer */}
-                <div className="flex-1 flex flex-col">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="flex items-center justify-between mb-4 py-4">
                     <div className="flex items-center gap-4">
                       <div className="text-sm font-medium">{selectedDocument?.name}</div>
                       {selectedDocument && selectedDocument.pages > 1 && (
@@ -589,7 +589,7 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                       <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(50, zoom - 25))}>
                         <ZoomOut className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm font-medium min-w-12 text-center">{zoom}%</span>
+                      <span className="text-sm font-medium min-w-16 text-center">{zoom}%</span>
                       <Button variant="outline" size="sm" onClick={() => setZoom(Math.min(200, zoom + 25))}>
                         <ZoomIn className="h-4 w-4" />
                       </Button>
@@ -597,36 +597,53 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                   </div>
 
                   {/* Document Display */}
-                  <div className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 relative">
+                  <div className="flex-1 border border-border rounded-lg overflow-auto bg-muted/20 relative">
                     {selectedDocument ? (
-                      <div className="relative h-full overflow-auto">
+                      <div className="relative w-full h-full">
                         {selectedDocument.type === 'pdf' ? (
-                          <iframe
-                            src={selectedDocument.url}
-                            className="w-full h-full"
-                            style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
-                          />
+                          <div className="w-full h-full flex items-center justify-center bg-white">
+                            <object
+                              data={selectedDocument.url}
+                              type="application/pdf"
+                              className="w-full h-full min-h-[600px]"
+                              style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center top' }}
+                            >
+                              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                                <FileText className="h-16 w-16 mb-4 text-muted-foreground" />
+                                <p className="text-lg font-medium mb-2">PDF Preview</p>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                  {selectedDocument.name} - Page {selectedEvidence?.pageNumber || 1}
+                                </p>
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
+                                  <p className="text-sm text-blue-700">
+                                    This is a simulated PDF viewer. In production, this would display the actual PDF content
+                                    with the highlighted evidence region.
+                                  </p>
+                                </div>
+                              </div>
+                            </object>
+                          </div>
                         ) : (
                           <img 
                             src="/placeholder.svg" 
                             alt={selectedDocument.name}
-                            className="w-full h-auto"
-                            style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                            className="w-full h-auto max-w-none"
+                            style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center top' }}
                           />
                         )}
                         
                         {/* Evidence Annotation Overlay */}
                         {selectedEvidence?.coordinates && (
                           <div
-                            className="absolute border-2 border-primary bg-primary/20 cursor-pointer"
+                            className="absolute border-2 border-primary bg-primary/20 rounded-sm"
                             style={{
-                              left: `${(selectedEvidence.coordinates.x || 0) * (zoom / 100)}px`,
-                              top: `${(selectedEvidence.coordinates.y || 0) * (zoom / 100)}px`,
-                              width: `${(selectedEvidence.coordinates.width || 0) * (zoom / 100)}px`,
-                              height: `${(selectedEvidence.coordinates.height || 0) * (zoom / 100)}px`,
+                              left: `${((selectedEvidence.coordinates.x || 0) * zoom) / 100}px`,
+                              top: `${((selectedEvidence.coordinates.y || 0) * zoom) / 100}px`,
+                              width: `${((selectedEvidence.coordinates.width || 0) * zoom) / 100}px`,
+                              height: `${((selectedEvidence.coordinates.height || 0) * zoom) / 100}px`,
                             }}
                           >
-                            <div className="absolute -top-6 left-0 bg-primary text-primary-foreground rounded px-2 py-1 text-xs font-medium">
+                            <div className="absolute -top-8 left-0 bg-primary text-primary-foreground rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-sm">
                               Evidence: {selectedEvidence.id}
                             </div>
                           </div>

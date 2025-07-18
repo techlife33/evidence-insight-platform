@@ -114,14 +114,14 @@ const NewAudit = () => {
       />
       
       <div className="flex-1 p-6 space-y-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto w-full">
           <ProgressTracker
             steps={auditSteps}
             currentStep={currentStep}
             className="mb-8"
           />
           
-          <Card className="p-8">
+          <Card className="p-8 w-full">
             {renderCurrentStep()}
           </Card>
         </div>
