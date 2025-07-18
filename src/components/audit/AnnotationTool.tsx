@@ -32,6 +32,7 @@ interface AnnotationToolProps {
   categories: string[];
   subcategories: { [key: string]: string[] };
   zoom: number;
+  onAnnotationModeChange?: (isCreating: boolean, annotationData: { text: string; category: string; subcategory: string }) => void;
 }
 
 export function AnnotationTool({ 
@@ -41,56 +42,33 @@ export function AnnotationTool({
   onDeleteAnnotation,
   categories,
   subcategories,
-  zoom 
+  zoom,
+  onAnnotationModeChange
 }: AnnotationToolProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [currentAnnotation, setCurrentAnnotation] = useState({
     text: "",
     category: "",
     subcategory: ""
   });
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isCreating) return;
+  const handleToggleCreateMode = () => {
+    const newCreatingState = !isCreating;
+    setIsCreating(newCreatingState);
     
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / (zoom / 100);
-    const y = (e.clientY - rect.top) / (zoom / 100);
-    
-    setDragStart({ x, y });
+    if (onAnnotationModeChange) {
+      onAnnotationModeChange(newCreatingState, currentAnnotation);
+    }
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isCreating || !dragStart) return;
+  const handleAnnotationDataChange = (updates: Partial<typeof currentAnnotation>) => {
+    const newAnnotationData = { ...currentAnnotation, ...updates };
+    setCurrentAnnotation(newAnnotationData);
     
-    const rect = e.currentTarget.getBoundingClientRect();
-    const endX = (e.clientX - rect.left) / (zoom / 100);
-    const endY = (e.clientY - rect.top) / (zoom / 100);
-    
-    const width = Math.abs(endX - dragStart.x);
-    const height = Math.abs(endY - dragStart.y);
-    
-    if (width > 10 && height > 10) {
-      const annotation = {
-        x: Math.min(dragStart.x, endX),
-        y: Math.min(dragStart.y, endY),
-        width,
-        height,
-        text: currentAnnotation.text,
-        category: currentAnnotation.category,
-        subcategory: currentAnnotation.subcategory
-      };
-      
-      if (annotation.text && annotation.category) {
-        onAddAnnotation(annotation);
-        setCurrentAnnotation({ text: "", category: "", subcategory: "" });
-        setIsCreating(false);
-      }
+    if (onAnnotationModeChange && isCreating) {
+      onAnnotationModeChange(isCreating, newAnnotationData);
     }
-    
-    setDragStart(null);
   };
 
   const handleSaveEdit = (id: string) => {
@@ -118,7 +96,7 @@ export function AnnotationTool({
             <Button
               size="sm"
               variant={isCreating ? "default" : "outline"}
-              onClick={() => setIsCreating(!isCreating)}
+              onClick={handleToggleCreateMode}
             >
               <Plus className="h-4 w-4 mr-1" />
               {isCreating ? "Cancel" : "Add Annotation"}
@@ -132,7 +110,7 @@ export function AnnotationTool({
                   <Label className="text-xs">Category</Label>
                   <Select 
                     value={currentAnnotation.category} 
-                    onValueChange={(value) => setCurrentAnnotation(prev => ({ ...prev, category: value, subcategory: "" }))}
+                    onValueChange={(value) => handleAnnotationDataChange({ category: value, subcategory: "" })}
                   >
                     <SelectTrigger className="h-8">
                       <SelectValue placeholder="Select category" />
@@ -151,7 +129,7 @@ export function AnnotationTool({
                   <Label className="text-xs">Subcategory</Label>
                   <Select 
                     value={currentAnnotation.subcategory} 
-                    onValueChange={(value) => setCurrentAnnotation(prev => ({ ...prev, subcategory: value }))}
+                    onValueChange={(value) => handleAnnotationDataChange({ subcategory: value })}
                     disabled={!currentAnnotation.category}
                   >
                     <SelectTrigger className="h-8">
@@ -172,7 +150,7 @@ export function AnnotationTool({
                 <Label className="text-xs">Annotation Text</Label>
                 <Textarea
                   value={currentAnnotation.text}
-                  onChange={(e) => setCurrentAnnotation(prev => ({ ...prev, text: e.target.value }))}
+                  onChange={(e) => handleAnnotationDataChange({ text: e.target.value })}
                   placeholder="Describe what this annotation references..."
                   rows={2}
                   className="text-sm resize-none"
@@ -249,30 +227,6 @@ export function AnnotationTool({
         </Card>
       )}
 
-      {/* Annotation Overlay */}
-      <div
-        className="absolute inset-0 pointer-events-auto"
-        style={{ cursor: isCreating ? 'crosshair' : 'default' }}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-      >
-        {annotations.map((annotation) => (
-          <div
-            key={annotation.id}
-            className="absolute border-2 border-primary bg-primary/20 rounded-sm group hover:bg-primary/30 transition-colors"
-            style={{
-              left: `${(annotation.x * zoom) / 100}px`,
-              top: `${(annotation.y * zoom) / 100}px`,
-              width: `${(annotation.width * zoom) / 100}px`,
-              height: `${(annotation.height * zoom) / 100}px`,
-            }}
-          >
-            <div className="absolute -top-6 left-0 bg-primary text-primary-foreground rounded px-1 py-0.5 text-xs font-medium whitespace-nowrap shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-              {annotation.category}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

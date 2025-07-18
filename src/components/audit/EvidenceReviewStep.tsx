@@ -58,6 +58,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { AuditData } from "@/pages/NewAudit";
 import { AnnotationTool } from "./AnnotationTool";
+import { DocumentAnnotationLayer } from "./DocumentAnnotationLayer";
 
 interface EvidenceReviewStepProps {
   data: AuditData;
@@ -226,6 +227,12 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
 
   // Page annotations state
   const [pageAnnotations, setPageAnnotations] = useState<PageAnnotation[]>([]);
+  
+  // Annotation tool state
+  const [annotationMode, setAnnotationMode] = useState({
+    isCreating: false,
+    annotationData: { text: "", category: "", subcategory: "" }
+  });
 
   useEffect(() => {
     setLoading(true);
@@ -347,6 +354,13 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
     return pageAnnotations.filter(
       ann => ann.documentId === selectedDocument.id && ann.pageNumber === viewerCurrentPage
     );
+  };
+
+  const handleAnnotationModeChange = (isCreating: boolean, annotationData: { text: string; category: string; subcategory: string }) => {
+    setAnnotationMode({
+      isCreating,
+      annotationData
+    });
   };
 
   const getConfidenceBadgeVariant = (confidence: number) => {
@@ -727,23 +741,15 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                                 </div>
                               )}
 
-                              {/* Page Annotations Overlay */}
-                              {getCurrentPageAnnotations().map((annotation) => (
-                                <div
-                                  key={annotation.id}
-                                  className="absolute border-2 border-primary bg-primary/20 rounded-sm group hover:bg-primary/30 transition-colors"
-                                  style={{
-                                    left: `${(annotation.x * zoom) / 100}px`,
-                                    top: `${(annotation.y * zoom) / 100}px`,
-                                    width: `${(annotation.width * zoom) / 100}px`,
-                                    height: `${(annotation.height * zoom) / 100}px`,
-                                  }}
-                                >
-                                  <div className="absolute -top-6 left-0 bg-primary text-primary-foreground rounded px-1 py-0.5 text-xs font-medium whitespace-nowrap shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {annotation.category}
-                                  </div>
-                                </div>
-                              ))}
+                              
+                              {/* Document Annotation Layer */}
+                              <DocumentAnnotationLayer
+                                annotations={getCurrentPageAnnotations()}
+                                onAddAnnotation={handleAddPageAnnotation}
+                                zoom={zoom}
+                                isCreating={annotationMode.isCreating}
+                                annotationData={annotationMode.annotationData}
+                              />
                             </div>
                           </div>
                         ) : (
@@ -767,83 +773,43 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                 </div>
 
                 {/* Evidence Details Panel */}
-                <div className="w-96 space-y-4 overflow-y-auto">
-                  {selectedEvidence && (
-                    <>
+                <div className="w-96 flex flex-col h-full overflow-hidden">
+                  {/* Fixed Evidence Details */}
+                  <div className="space-y-4 mb-4">
+                    {selectedEvidence && (
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-base">Evidence Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Category</Label>
-                            <div className="text-sm">{selectedEvidence.category}</div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Category</Label>
+                              <div className="text-sm font-medium">{selectedEvidence.category}</div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Subcategory</Label>
+                              <div className="text-sm font-medium">{selectedEvidence.subcategory}</div>
+                            </div>
                           </div>
                           <div className="space-y-2">
-                            <Label>Subcategory</Label>
-                            <div className="text-sm">{selectedEvidence.subcategory}</div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Finding</Label>
+                            <Label className="text-xs">Finding</Label>
                             <div className="text-sm">{selectedEvidence.finding}</div>
                           </div>
-                          <div className="space-y-2">
-                            <Label>Confidence</Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">Confidence</Label>
                             <Badge variant={getConfidenceBadgeVariant(selectedEvidence.confidence)}>
                               {selectedEvidence.confidence}%
                             </Badge>
                           </div>
                         </CardContent>
                       </Card>
+                    )}
+                  </div>
 
-                      <Card>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Original Annotation</CardTitle>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setIsEditingAnnotation(!isEditingAnnotation)}
-                            >
-                              <Edit3 className="h-4 w-4 mr-1" />
-                              {isEditingAnnotation ? "Cancel" : "Edit"}
-                            </Button>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {isEditingAnnotation ? (
-                            <div className="space-y-3">
-                              <Textarea
-                                value={editingAnnotation}
-                                onChange={(e) => setEditingAnnotation(e.target.value)}
-                                rows={4}
-                                placeholder="Update the annotation..."
-                              />
-                              <Button size="sm" onClick={handleSaveAnnotation} className="w-full">
-                                <Save className="h-4 w-4 mr-1" />
-                                Save Annotation
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="text-sm bg-muted/50 p-3 rounded border-l-4 border-blue-500/30">
-                              {selectedEvidence.annotation}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base">AI Analysis</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm bg-accent/5 p-3 rounded border-l-4 border-accent/30">
-                            {selectedEvidence.explanation}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Annotation Tool */}
+                  {/* Annotation Tool - Prominent Position */}
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {selectedEvidence && (
                       <AnnotationTool
                         annotations={getCurrentPageAnnotations()}
                         onAddAnnotation={handleAddPageAnnotation}
@@ -852,9 +818,69 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                         categories={categories}
                         subcategories={subcategories}
                         zoom={zoom}
+                        onAnnotationModeChange={handleAnnotationModeChange}
                       />
+                    )}
+                  </div>
 
-                      <div className="space-y-2">
+                  {/* Scrollable Details Section */}
+                  <div className="space-y-4 overflow-y-auto max-h-64 mt-4">
+                    {selectedEvidence && (
+                      <>
+                        <Card>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-base">Original Annotation</CardTitle>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsEditingAnnotation(!isEditingAnnotation)}
+                              >
+                                <Edit3 className="h-4 w-4 mr-1" />
+                                {isEditingAnnotation ? "Cancel" : "Edit"}
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            {isEditingAnnotation ? (
+                              <div className="space-y-3">
+                                <Textarea
+                                  value={editingAnnotation}
+                                  onChange={(e) => setEditingAnnotation(e.target.value)}
+                                  rows={4}
+                                  placeholder="Update the annotation..."
+                                />
+                                <Button size="sm" onClick={handleSaveAnnotation} className="w-full">
+                                  <Save className="h-4 w-4 mr-1" />
+                                  Save Annotation
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="text-sm bg-muted/50 p-3 rounded border-l-4 border-blue-500/30">
+                                {selectedEvidence.annotation}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">AI Analysis</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-sm bg-accent/5 p-3 rounded border-l-4 border-accent/30">
+                              {selectedEvidence.explanation}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Fixed Action Buttons */}
+                  <div className="space-y-2 pt-4 border-t">
+                    {selectedEvidence && (
+                      <>
                         <Button
                           className="w-full"
                           variant={selectedEvidence.status === 'approved' ? 'default' : 'outline'}
@@ -877,9 +903,9 @@ export function EvidenceReviewStep({ data, onUpdate, onNext, onPrevious }: Evide
                           <XCircle className="h-4 w-4 mr-2" />
                           Reject Evidence
                         </Button>
-                      </div>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </DialogContent>
