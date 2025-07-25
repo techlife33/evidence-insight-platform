@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import Index from "./pages/Index";
 import NewAudit from "./pages/NewAudit";
+import Configuration from "./pages/Configuration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,7 +25,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/new-audit" element={<NewAudit />} />
-                <Route path="/configuration" element={<Index />} />
+                <Route path="/configuration" element={<Configuration />} />
                 <Route path="/analytics" element={<Index />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
