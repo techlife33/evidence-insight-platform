@@ -105,22 +105,38 @@ const Configuration = () => {
           key="standards"
           variant="ghost"
           size="sm"
-          onClick={() => navigateTo({ screen: 'standards' })}
+          onClick={() => navigateTo({ 
+            screen: 'standards',
+            selectedStandard: undefined,
+            selectedProcessArea: undefined,
+            selectedControl: undefined,
+            selectedCriteria: undefined
+          })}
           className="text-primary hover:text-primary/80"
         >
-          Standards
+          Frameworks
         </Button>
       );
     }
 
     if (navigation.selectedStandard) {
-      items.push(<span key="separator1" className="text-muted-foreground">›</span>);
+      items.push(<span key="separator1" className="text-muted-foreground cursor-pointer hover:text-foreground" onClick={() => navigateTo({ 
+        screen: 'process-areas',
+        selectedProcessArea: undefined,
+        selectedControl: undefined,
+        selectedCriteria: undefined
+      })}>›</span>);
       items.push(
         <Button
           key="process-areas"
           variant="ghost"
           size="sm"
-          onClick={() => navigateTo({ screen: 'process-areas' })}
+          onClick={() => navigateTo({ 
+            screen: 'process-areas',
+            selectedProcessArea: undefined,
+            selectedControl: undefined,
+            selectedCriteria: undefined
+          })}
           className="text-primary hover:text-primary/80"
         >
           {navigation.selectedStandard.name}
@@ -129,13 +145,21 @@ const Configuration = () => {
     }
 
     if (navigation.selectedProcessArea) {
-      items.push(<span key="separator2" className="text-muted-foreground">›</span>);
+      items.push(<span key="separator2" className="text-muted-foreground cursor-pointer hover:text-foreground" onClick={() => navigateTo({ 
+        screen: 'controls',
+        selectedControl: undefined,
+        selectedCriteria: undefined
+      })}>›</span>);
       items.push(
         <Button
           key="controls"
           variant="ghost"
           size="sm"
-          onClick={() => navigateTo({ screen: 'controls' })}
+          onClick={() => navigateTo({ 
+            screen: 'controls',
+            selectedControl: undefined,
+            selectedCriteria: undefined
+          })}
           className="text-primary hover:text-primary/80"
         >
           {navigation.selectedProcessArea.code}
@@ -144,13 +168,19 @@ const Configuration = () => {
     }
 
     if (navigation.selectedControl) {
-      items.push(<span key="separator3" className="text-muted-foreground">›</span>);
+      items.push(<span key="separator3" className="text-muted-foreground cursor-pointer hover:text-foreground" onClick={() => navigateTo({ 
+        screen: 'criteria',
+        selectedCriteria: undefined
+      })}>›</span>);
       items.push(
         <Button
           key="criteria"
           variant="ghost"
           size="sm"
-          onClick={() => navigateTo({ screen: 'criteria' })}
+          onClick={() => navigateTo({ 
+            screen: 'criteria',
+            selectedCriteria: undefined
+          })}
           className="text-primary hover:text-primary/80"
         >
           {navigation.selectedControl.code}
@@ -159,7 +189,7 @@ const Configuration = () => {
     }
 
     if (navigation.selectedCriteria) {
-      items.push(<span key="separator4" className="text-muted-foreground">›</span>);
+      items.push(<span key="separator4" className="text-muted-foreground cursor-pointer hover:text-foreground" onClick={() => navigateTo({ screen: 'rules' })}>›</span>);
       items.push(
         <span key="current" className="text-foreground font-medium">
           {navigation.selectedCriteria.code}
