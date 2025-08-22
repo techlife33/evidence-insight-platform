@@ -4,7 +4,8 @@ import {
   Settings, 
   BarChart3,
   User,
-  ChevronRight
+  ChevronRight,
+  FolderOpen
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,11 @@ const navigationItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Project Management",
+    url: "/projects",
+    icon: FolderOpen,
   },
   {
     title: "New Audit",

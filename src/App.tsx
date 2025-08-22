@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import Index from "./pages/Index";
 import NewAudit from "./pages/NewAudit";
 import Configuration from "./pages/Configuration";
+import ProjectManagement from "./pages/ProjectManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <SidebarInset className="flex-1">
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/projects" element={<ProjectManagement />} />
                 <Route path="/new-audit" element={<NewAudit />} />
                 <Route path="/configuration" element={<Configuration />} />
                 <Route path="/analytics" element={<Index />} />
