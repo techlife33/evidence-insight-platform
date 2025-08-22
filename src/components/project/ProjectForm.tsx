@@ -68,17 +68,30 @@ const availableFrameworks = [
   { id: "PCI_DSS", name: "PCI DSS" },
 ];
 
+// Simulated large user dataset - in real app, this would come from API
 const availableUsers = [
-  { id: "1", name: "John Doe", role: "Senior Auditor" },
-  { id: "2", name: "Jane Smith", role: "Audit Manager" },
-  { id: "3", name: "Mike Johnson", role: "IT Auditor" },
-  { id: "4", name: "Sarah Wilson", role: "Compliance Officer" },
-  { id: "5", name: "Alice Brown", role: "Risk Analyst" },
+  { id: "1", name: "John Doe", role: "Senior Auditor", department: "Compliance" },
+  { id: "2", name: "Jane Smith", role: "Audit Manager", department: "Internal Audit" },
+  { id: "3", name: "Mike Johnson", role: "IT Auditor", department: "Technology" },
+  { id: "4", name: "Sarah Wilson", role: "Compliance Officer", department: "Compliance" },
+  { id: "5", name: "Alice Brown", role: "Risk Analyst", department: "Risk Management" },
+  { id: "6", name: "David Chen", role: "Senior Auditor", department: "Financial Audit" },
+  { id: "7", name: "Lisa Garcia", role: "IT Specialist", department: "Technology" },
+  { id: "8", name: "Robert Kim", role: "Compliance Analyst", department: "Compliance" },
+  { id: "9", name: "Emma Thompson", role: "Risk Manager", department: "Risk Management" },
+  { id: "10", name: "James Wilson", role: "Audit Director", department: "Internal Audit" },
+  { id: "11", name: "Maria Rodriguez", role: "Security Auditor", department: "Cybersecurity" },
+  { id: "12", name: "Kevin Liu", role: "Quality Assurance", department: "Operations" },
+  { id: "13", name: "Anna Petrov", role: "Financial Analyst", department: "Finance" },
+  { id: "14", name: "Tom Bradley", role: "Process Auditor", department: "Operations" },
+  { id: "15", name: "Sophie Martin", role: "Regulatory Specialist", department: "Legal" },
 ];
 
 export function ProjectForm({ mode, project, onBack }: ProjectFormProps) {
   const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -138,6 +151,22 @@ export function ProjectForm({ mode, project, onBack }: ProjectFormProps) {
     
     setSelectedUsers(newUsers);
     form.setValue("assignedUsers", newUsers);
+  };
+
+  const filteredUsers = availableUsers.filter(user =>
+    user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    user.role.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    user.department.toLowerCase().includes(userSearchQuery.toLowerCase())
+  );
+
+  const addUser = (userName: string) => {
+    if (!selectedUsers.includes(userName)) {
+      const newUsers = [...selectedUsers, userName];
+      setSelectedUsers(newUsers);
+      form.setValue("assignedUsers", newUsers);
+    }
+    setUserSearchQuery("");
+    setIsUserDropdownOpen(false);
   };
 
   const removeFramework = (frameworkId: string) => {
@@ -362,47 +391,84 @@ export function ProjectForm({ mode, project, onBack }: ProjectFormProps) {
                 render={() => (
                   <FormItem>
                     <FormLabel>Assigned Users</FormLabel>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {availableUsers.map((user) => (
-                        <FormItem
-                          key={user.id}
-                          className="flex flex-row items-start space-x-3 space-y-0"
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={selectedUsers.includes(user.name)}
-                              onCheckedChange={(checked) =>
-                                handleUserChange(user.name, checked as boolean)
-                              }
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="text-sm font-normal">
-                              {user.name}
-                            </FormLabel>
-                            <div className="text-xs text-muted-foreground">
-                              {user.role}
-                            </div>
+                    
+                    {/* Search and Add Users */}
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Input
+                          placeholder="Search users by name, role, or department..."
+                          value={userSearchQuery}
+                          onChange={(e) => {
+                            setUserSearchQuery(e.target.value);
+                            setIsUserDropdownOpen(e.target.value.length > 0);
+                          }}
+                          onFocus={() => setIsUserDropdownOpen(userSearchQuery.length > 0)}
+                          className="w-full"
+                        />
+                        
+                        {/* Dropdown with filtered users */}
+                        {isUserDropdownOpen && filteredUsers.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {filteredUsers.slice(0, 10).map((user) => (
+                              <button
+                                key={user.id}
+                                type="button"
+                                onClick={() => addUser(user.name)}
+                                disabled={selectedUsers.includes(user.name)}
+                                className="w-full px-3 py-2 text-left hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed border-b last:border-b-0"
+                              >
+                                <div className="font-medium text-sm">{user.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {user.role} • {user.department}
+                                </div>
+                              </button>
+                            ))}
+                            {filteredUsers.length > 10 && (
+                              <div className="px-3 py-2 text-xs text-muted-foreground border-t">
+                                Showing first 10 results. Keep typing to narrow down.
+                              </div>
+                            )}
                           </div>
-                        </FormItem>
-                      ))}
-                    </div>
-                    {selectedUsers.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {selectedUsers.map((userName) => (
-                          <Badge key={userName} variant="secondary" className="gap-1">
-                            {userName}
-                            <button
-                              type="button"
-                              onClick={() => removeUser(userName)}
-                              className="ml-1 hover:bg-secondary-foreground/20 rounded-sm"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
+                        )}
+                        
+                        {/* Click outside to close */}
+                        {isUserDropdownOpen && (
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setIsUserDropdownOpen(false)}
+                          />
+                        )}
                       </div>
-                    )}
+
+                      {/* Selected Users */}
+                      {selectedUsers.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium">Selected Users ({selectedUsers.length})</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedUsers.map((userName) => {
+                              const user = availableUsers.find(u => u.name === userName);
+                              return (
+                                <Badge key={userName} variant="secondary" className="gap-1 py-1">
+                                  <div className="flex flex-col items-start">
+                                    <span className="text-xs font-medium">{userName}</span>
+                                    {user && (
+                                      <span className="text-xs text-muted-foreground">{user.role}</span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeUser(userName)}
+                                    className="ml-1 hover:bg-secondary-foreground/20 rounded-sm"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
