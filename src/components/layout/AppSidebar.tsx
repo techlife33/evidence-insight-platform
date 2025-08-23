@@ -5,7 +5,8 @@ import {
   BarChart3,
   User,
   ChevronRight,
-  FolderOpen
+  FolderOpen,
+  Users
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,13 @@ const navigationItems = [
     title: "Configuration",
     url: "/configuration",
     icon: Settings,
+    subItems: [
+      {
+        title: "User Management",
+        url: "/user-management",
+        icon: Users,
+      }
+    ]
   },
   {
     title: "Analytics",
@@ -95,6 +103,30 @@ export function AppSidebar() {
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
+                  {/* Sub-items for Configuration */}
+                  {item.subItems && !collapsed && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.subItems.map((subItem) => (
+                        <SidebarMenuButton key={subItem.title} asChild>
+                          <NavLink
+                            to={subItem.url}
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-3 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                                "hover:bg-accent hover:text-accent-foreground",
+                                isActive
+                                  ? "bg-secondary text-secondary-foreground"
+                                  : "text-muted-foreground"
+                              )
+                            }
+                          >
+                            <subItem.icon className="h-3 w-3" />
+                            <span>{subItem.title}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      ))}
+                    </div>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
