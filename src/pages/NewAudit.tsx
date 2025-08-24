@@ -31,6 +31,7 @@ const auditSteps = [
 ];
 
 export interface AuditData {
+  project: string;
   name: string;
   framework: string;
   processAreas: string[];
@@ -43,6 +44,7 @@ export interface AuditData {
 const NewAudit = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [auditData, setAuditData] = useState<AuditData>({
+    project: "",
     name: "",
     framework: "",
     processAreas: [],

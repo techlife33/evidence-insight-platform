@@ -13,6 +13,29 @@ interface AuditSetupStepProps {
   onNext: () => void;
 }
 
+const mockProjects = [
+  { 
+    id: "proj-1", 
+    name: "Healthcare Compliance 2024",
+    frameworks: ["ncqa", "hipaa"] 
+  },
+  { 
+    id: "proj-2", 
+    name: "Financial Services Audit",
+    frameworks: ["sox", "iso27001"] 
+  },
+  { 
+    id: "proj-3", 
+    name: "Quality Management System",
+    frameworks: ["iso9001", "iso27001"] 
+  },
+  { 
+    id: "proj-4", 
+    name: "Data Privacy Compliance",
+    frameworks: ["gdpr", "iso27001"] 
+  },
+];
+
 const frameworks = [
   { id: "ncqa", name: "NCQA (National Committee for Quality Assurance)" },
   { id: "iso9001", name: "ISO 9001:2015" },
@@ -76,6 +99,9 @@ export function AuditSetupStep({ data, onUpdate, onNext }: AuditSetupStepProps) 
   const handleSubmit = () => {
     const newErrors: Record<string, string> = {};
 
+    if (!data.project) {
+      newErrors.project = "Project selection is required";
+    }
     if (!data.name.trim()) {
       newErrors.name = "Audit name is required";
     }
@@ -101,6 +127,11 @@ export function AuditSetupStep({ data, onUpdate, onNext }: AuditSetupStepProps) 
     }
   };
 
+  const selectedProject = mockProjects.find(p => p.id === data.project);
+  const availableFrameworks = selectedProject 
+    ? frameworks.filter(f => selectedProject.frameworks.includes(f.id))
+    : [];
+
   const availableProcessAreas = data.framework 
     ? processAreasByFramework[data.framework as keyof typeof processAreasByFramework] || []
     : [];
@@ -116,6 +147,28 @@ export function AuditSetupStep({ data, onUpdate, onNext }: AuditSetupStepProps) 
 
       <div className="grid gap-6">
         <div className="space-y-2">
+          <Label htmlFor="project">Project *</Label>
+          <Select
+            value={data.project}
+            onValueChange={(value) => onUpdate({ project: value, framework: "", processAreas: [] })}
+          >
+            <SelectTrigger className={errors.project ? "border-destructive" : ""}>
+              <SelectValue placeholder="Select a project" />
+            </SelectTrigger>
+            <SelectContent>
+              {mockProjects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.project && (
+            <p className="text-sm text-destructive">{errors.project}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="audit-name">Audit Name *</Label>
           <Input
             id="audit-name"
@@ -129,27 +182,29 @@ export function AuditSetupStep({ data, onUpdate, onNext }: AuditSetupStepProps) 
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="framework">Audit Framework *</Label>
-          <Select
-            value={data.framework}
-            onValueChange={(value) => onUpdate({ framework: value, processAreas: [] })}
-          >
-            <SelectTrigger className={errors.framework ? "border-destructive" : ""}>
-              <SelectValue placeholder="Select an audit framework" />
-            </SelectTrigger>
-            <SelectContent>
-              {frameworks.map((framework) => (
-                <SelectItem key={framework.id} value={framework.id}>
-                  {framework.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.framework && (
-            <p className="text-sm text-destructive">{errors.framework}</p>
-          )}
-        </div>
+        {data.project && (
+          <div className="space-y-2">
+            <Label htmlFor="framework">Audit Framework *</Label>
+            <Select
+              value={data.framework}
+              onValueChange={(value) => onUpdate({ framework: value, processAreas: [] })}
+            >
+              <SelectTrigger className={errors.framework ? "border-destructive" : ""}>
+                <SelectValue placeholder="Select an audit framework" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableFrameworks.map((framework) => (
+                  <SelectItem key={framework.id} value={framework.id}>
+                    {framework.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.framework && (
+              <p className="text-sm text-destructive">{errors.framework}</p>
+            )}
+          </div>
+        )}
 
         {data.framework && (
           <div className="space-y-4">
