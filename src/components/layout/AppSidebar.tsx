@@ -2,7 +2,6 @@ import {
   LayoutDashboard, 
   FileSearch, 
   Settings, 
-  BarChart3,
   User,
   ChevronRight,
   FolderOpen,
@@ -50,11 +49,6 @@ const navigationItems = [
     title: "User Management",
     url: "/user-management",
     icon: Users,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
   },
 ];
 
