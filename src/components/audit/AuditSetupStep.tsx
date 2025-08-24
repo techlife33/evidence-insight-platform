@@ -147,6 +147,20 @@ export function AuditSetupStep({ data, onUpdate, onNext }: AuditSetupStepProps) 
 
       <div className="grid gap-6">
         <div className="space-y-2">
+          <Label htmlFor="audit-name">Audit Name *</Label>
+          <Input
+            id="audit-name"
+            placeholder="Enter a descriptive name for this audit"
+            value={data.name}
+            onChange={(e) => onUpdate({ name: e.target.value })}
+            className={errors.name ? "border-destructive" : ""}
+          />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="project">Project *</Label>
           <Select
             value={data.project}
@@ -165,20 +179,6 @@ export function AuditSetupStep({ data, onUpdate, onNext }: AuditSetupStepProps) 
           </Select>
           {errors.project && (
             <p className="text-sm text-destructive">{errors.project}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="audit-name">Audit Name *</Label>
-          <Input
-            id="audit-name"
-            placeholder="Enter a descriptive name for this audit"
-            value={data.name}
-            onChange={(e) => onUpdate({ name: e.target.value })}
-            className={errors.name ? "border-destructive" : ""}
-          />
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name}</p>
           )}
         </div>
 
